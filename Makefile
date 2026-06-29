@@ -33,7 +33,7 @@ install-python:
 
 .PHONY: install-node
 install-node:
-	cd platform/frontend && npm install --silent
+	cd platform/frontend && rm -rf node_modules && npm install --silent
 
 # ─── scrape ────────────────────────────────────────────────────────────────────
 .PHONY: scrape

@@ -44,10 +44,15 @@ def init_db():
             scraped_at TEXT
         )
     """)
-    # migrate existing tables that lack image_url
+    # migrate: add image_url if missing
     cols = [r[1] for r in conn.execute("PRAGMA table_info(products)").fetchall()]
     if "image_url" not in cols:
         conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT DEFAULT ''")
+    # unique constraint: one entry per (name, source) per calendar day
+    conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_product_daily
+        ON products (name, source, DATE(scraped_at))
+    """)
     conn.commit()
     conn.close()
 
@@ -57,7 +62,7 @@ def save_products(products: List[Product]):
         return
     conn = sqlite3.connect(DB_PATH)
     conn.executemany(
-        """INSERT INTO products
+        """INSERT OR REPLACE INTO products
            (name, price, original_price, discount_pct, rating, review_count,
             category, rank, source, url, image_url, scraped_at)
            VALUES (:name, :price, :original_price, :discount_pct, :rating,

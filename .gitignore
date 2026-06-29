@@ -1,0 +1,19 @@
+# data files — generated at runtime
+data/*.db
+data/*.csv
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node
+platform/frontend/node_modules/
+platform/frontend/.next/
+platform/frontend/.env.local
+
+# OS
+.DS_Store

@@ -100,6 +100,18 @@ def categories(
     return rows
 
 
+@app.get("/api/sources")
+def sources():
+    conn = get_conn()
+    cur = conn.execute(
+        "SELECT source, COUNT(*) as count FROM products "
+        f"WHERE {LATEST_BATCH} GROUP BY source ORDER BY source"
+    )
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
 @app.get("/api/dates")
 def dates():
     conn = get_conn()

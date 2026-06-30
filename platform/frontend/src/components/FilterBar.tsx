@@ -1,5 +1,5 @@
 "use client";
-import { CategoryCount, DateCount } from "@/types/product";
+import { CategoryCount, DateCount, SourceCount } from "@/types/product";
 
 interface Filters {
   date: string;
@@ -13,6 +13,7 @@ interface Props {
   onChange: (f: Filters) => void;
   categories: CategoryCount[];
   dates: DateCount[];
+  sources: SourceCount[];
 }
 
 const SORTS = [
@@ -23,7 +24,15 @@ const SORTS = [
   { value: "price_desc", label: "Price ↓" },
 ];
 
-export default function FilterBar({ filters, onChange, categories, dates }: Props) {
+const SOURCE_LABELS: Record<string, string> = {
+  jumia: "Jumia",
+  marjane: "Marjane",
+  electroplanet: "Electroplanet",
+  kitea: "Kitea",
+  hmizate: "Hmizate",
+};
+
+export default function FilterBar({ filters, onChange, categories, dates, sources }: Props) {
   const set = (key: keyof Filters, val: string) =>
     onChange({ ...filters, [key]: val });
 
@@ -32,55 +41,32 @@ export default function FilterBar({ filters, onChange, categories, dates }: Prop
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
-      {/* date */}
-      <select
-        className={selectClass}
-        value={filters.date}
-        onChange={(e) => set("date", e.target.value)}
-      >
+      <select className={selectClass} value={filters.date} onChange={(e) => set("date", e.target.value)}>
         <option value="">Today</option>
         {dates.map((d) => (
-          <option key={d.date} value={d.date}>
-            {d.date} ({d.count})
+          <option key={d.date} value={d.date}>{d.date} ({d.count})</option>
+        ))}
+      </select>
+
+      <select className={selectClass} value={filters.source} onChange={(e) => set("source", e.target.value)}>
+        <option value="">All sources</option>
+        {sources.map((s) => (
+          <option key={s.source} value={s.source}>
+            {SOURCE_LABELS[s.source] ?? s.source} ({s.count})
           </option>
         ))}
       </select>
 
-      {/* source */}
-      <select
-        className={selectClass}
-        value={filters.source}
-        onChange={(e) => set("source", e.target.value)}
-      >
-        <option value="">All sources</option>
-        <option value="jumia">Jumia</option>
-        <option value="marjane">Marjane</option>
-      </select>
-
-      {/* category */}
-      <select
-        className={selectClass}
-        value={filters.category}
-        onChange={(e) => set("category", e.target.value)}
-      >
+      <select className={selectClass} value={filters.category} onChange={(e) => set("category", e.target.value)}>
         <option value="">All categories</option>
         {categories.map((c) => (
-          <option key={c.category} value={c.category}>
-            {c.category} ({c.count})
-          </option>
+          <option key={c.category} value={c.category}>{c.category} ({c.count})</option>
         ))}
       </select>
 
-      {/* sort */}
-      <select
-        className={selectClass}
-        value={filters.sort}
-        onChange={(e) => set("sort", e.target.value)}
-      >
+      <select className={selectClass} value={filters.sort} onChange={(e) => set("sort", e.target.value)}>
         {SORTS.map((s) => (
-          <option key={s.value} value={s.value}>
-            {s.label}
-          </option>
+          <option key={s.value} value={s.value}>{s.label}</option>
         ))}
       </select>
     </div>

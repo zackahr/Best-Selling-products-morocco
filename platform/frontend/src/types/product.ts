@@ -8,7 +8,7 @@ export interface Product {
   review_count: number;
   category: string;
   rank: number;
-  source: "jumia" | "marjane";
+  source: string;
   url: string;
   image_url: string;
   scraped_at: string;
@@ -26,6 +26,11 @@ export interface CategoryCount {
 
 export interface DateCount {
   date: string;
+  count: number;
+}
+
+export interface SourceCount {
+  source: string;
   count: number;
 }
 

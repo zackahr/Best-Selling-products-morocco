@@ -6,6 +6,7 @@ import {
   BestsellersResponse,
   CategoryCount,
   DateCount,
+  SourceCount,
   Stats,
   Product,
 } from "@/types/product";
@@ -39,12 +40,14 @@ export default function Home() {
   const [page, setPage] = useState(0);
   const [categories, setCategories] = useState<CategoryCount[]>([]);
   const [dates, setDates] = useState<DateCount[]>([]);
+  const [sources, setSources] = useState<SourceCount[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch<DateCount[]>("/api/dates").then(setDates).catch(console.error);
     apiFetch<Stats>("/api/stats").then(setStats).catch(console.error);
+    apiFetch<SourceCount[]>("/api/sources").then(setSources).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -134,6 +137,7 @@ export default function Home() {
             onChange={setFilters}
             categories={categories}
             dates={dates}
+            sources={sources}
           />
         </div>
 

@@ -4,6 +4,22 @@ import { Product } from "@/types/product";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const SOURCE_LABELS: Record<string, string> = {
+  jumia: "Jumia",
+  marjane: "Marjane",
+  electroplanet: "Electroplanet",
+  kitea: "Kitea",
+  hmizate: "Hmizate",
+};
+
+const SOURCE_COLORS: Record<string, string> = {
+  jumia: "bg-orange-500",
+  marjane: "bg-green-600",
+  electroplanet: "bg-blue-600",
+  kitea: "bg-yellow-600",
+  hmizate: "bg-purple-600",
+};
+
 function Stars({ rating }: { rating: number }) {
   const full = Math.floor(rating);
   const half = rating - full >= 0.5;
@@ -45,12 +61,8 @@ export default function ProductCard({ product }: { product: Product }) {
             -{Math.round(product.discount_pct)}%
           </span>
         )}
-        <span
-          className={`absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full ${
-            product.source === "jumia" ? "bg-orange-500" : "bg-green-600"
-          }`}
-        >
-          {product.source === "jumia" ? "Jumia" : "Marjane"}
+        <span className={`absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full ${SOURCE_COLORS[product.source] ?? "bg-gray-500"}`}>
+          {SOURCE_LABELS[product.source] ?? product.source}
         </span>
       </div>
 

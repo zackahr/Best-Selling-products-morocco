@@ -1,11 +1,23 @@
-"""Run both Jumia and Marjane scrapers, print summary, export CSV."""
+"""Run all scrapers, print summary, export CSV."""
 import asyncio
 import sys
 from collections import Counter
 
 import jumia_scraper
 import marjane_scraper
-from db import init_db, export_csv, get_top
+import electroplanet_scraper
+import kitea_scraper
+import hmizate_scraper
+from db import init_db, export_csv, get_top, DB_PATH
+import sqlite3
+
+ALL_SCRAPERS = {
+    "jumia":         jumia_scraper.run,
+    "marjane":       marjane_scraper.run,
+    "electroplanet": electroplanet_scraper.run,
+    "kitea":         kitea_scraper.run,
+    "hmizate":       hmizate_scraper.run,
+}
 
 
 async def main():
@@ -15,63 +27,48 @@ async def main():
     print("MARKET INTEL SCRAPER")
     print("=" * 50)
 
-    targets = sys.argv[1:]  # optional: 'jumia' or 'marjane' to run one
-    run_jumia = not targets or "jumia" in targets
-    run_marjane = not targets or "marjane" in targets
+    targets = sys.argv[1:]  # pass source names to run only those, e.g. "jumia electroplanet"
+    to_run = {k: v for k, v in ALL_SCRAPERS.items() if not targets or k in targets}
 
+    print(f"Running: {', '.join(to_run.keys())}")
+
+    # run sequentially — each scraper opens a full browser, concurrent = memory pressure
     all_products = []
-
-    if run_jumia and run_marjane:
-        # run concurrently
-        results = await asyncio.gather(
-            jumia_scraper.run(),
-            marjane_scraper.run(),
-            return_exceptions=True,
-        )
-        for r in results:
-            if isinstance(r, Exception):
-                print(f"[error] {r}")
-            else:
-                all_products.extend(r)
-    elif run_jumia:
-        all_products = await jumia_scraper.run()
-    elif run_marjane:
-        all_products = await marjane_scraper.run()
+    for name, fn in to_run.items():
+        try:
+            result = await fn()
+            all_products.extend(result)
+        except Exception as e:
+            print(f"[error] {name}: {e}")
 
     print("\n" + "=" * 50)
     print(f"TOTAL SCRAPED: {len(all_products)} products")
-
     by_source = Counter(p.source for p in all_products)
-    for src, count in by_source.items():
+    for src, count in sorted(by_source.items()):
         print(f"  {src}: {count}")
 
     export_csv()
 
-    print("\nTOP 20 BY REVIEWS (all sources):")
-    print(f"{'Rank':<5} {'Source':<10} {'Category':<15} {'Reviews':<8} {'Rating':<7} {'Price':<10} Name")
-    print("-" * 90)
+    print("\nTOP 20 BY REVIEWS:")
+    print(f"{'#':<4} {'Source':<15} {'Category':<18} {'Reviews':<8} {'Rating':<7} {'Price':<10} Name")
+    print("-" * 95)
     for i, p in enumerate(get_top(20), 1):
-        name_short = p["name"][:45] + "…" if len(p["name"]) > 45 else p["name"]
-        print(f"{i:<5} {p['source']:<10} {p['category']:<15} {p['review_count']:<8} "
-              f"{p['rating']:<7} {p['price']:<10.0f} {name_short}")
+        print(f"{i:<4} {p['source']:<15} {p['category']:<18} {p['review_count']:<8} "
+              f"{p['rating']:<7} {p['price']:<10.0f} {p['name'][:40]}")
 
     print("\nTOP 20 BY DISCOUNT:")
-    from db import DB_PATH
-    import sqlite3
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.execute(
+    rows = conn.execute(
         "SELECT source, category, discount_pct, price, name FROM products "
         "WHERE discount_pct > 0 ORDER BY discount_pct DESC LIMIT 20"
-    )
-    rows = cur.fetchall()
+    ).fetchall()
     conn.close()
-    print(f"{'#':<4} {'Source':<10} {'Category':<15} {'Disc%':<7} {'Price':<10} Name")
-    print("-" * 80)
+    print(f"{'#':<4} {'Source':<15} {'Category':<18} {'Disc%':<7} {'Price':<10} Name")
+    print("-" * 85)
     for i, (src, cat, disc, price, name) in enumerate(rows, 1):
-        name_short = name[:40] + "…" if len(name) > 40 else name
-        print(f"{i:<4} {src:<10} {cat:<15} {disc:<7.0f} {price:<10.0f} {name_short}")
+        print(f"{i:<4} {src:<15} {cat:<18} {disc:<7.0f} {price:<10.0f} {name[:40]}")
 
-    print("\nDone. Data in data/market_intel.db + data/market_intel.csv")
+    print("\nDone. Data → data/market_intel.db + data/market_intel.csv")
 
 
 if __name__ == "__main__":
